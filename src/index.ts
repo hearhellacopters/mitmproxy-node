@@ -5,7 +5,12 @@ import {parse as parseURL, Url} from 'url';
 import {get as httpGet} from 'http';
 import {get as httpsGet} from 'https';
 import {createConnection, Socket} from 'net';
-
+interface Process {
+  pkg: boolean,
+  on: Function,
+  cwd: Function
+}
+declare var process: Process
 /**
  * Wait for the specified port to open.
  * @param port The port to watch for.
@@ -381,8 +386,8 @@ export default class MITMProxy {
         if (ignoreHosts) {
           scriptArgs.push(`--ignore-hosts`, ignoreHosts);
         }
-
-        const options = ["--anticache", "-s", resolve(__dirname, `../scripts/proxy.py`)].concat(scriptArgs);
+        var path = (process.pkg) ? process.cwd() : __dirname;
+        const options = ["--anticache", "-s", resolve(path, `../scripts/proxy.py`)].concat(scriptArgs);
         if (quiet) {
           options.push('-q');
         }

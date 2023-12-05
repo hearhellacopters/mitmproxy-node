@@ -218,7 +218,7 @@ class WebSocketAdapter:
         """
         while not self.finished:
             try:
-                async with websockets.connect('ws://localhost:8765', max_size = None) as websocket:
+                async with websockets.connect('ws://localhost:8765', max_size = None,  ping_interval = None) as websocket:
                     while True:
                         # Make sure connection is still live.
                         await websocket.ping()
