@@ -23,6 +23,8 @@ export interface HTTPResponse {
  */
 export interface HTTPRequestMetadata {
     method: string;
+    address: string;
+    port: number;
     url: string;
     headers: [string, string][];
 }
@@ -80,6 +82,8 @@ export declare class InterceptedHTTPRequest extends AbstractHTTPHeaders {
     method: string;
     rawUrl: string;
     url: Url;
+    address: string;
+    port: number;
     constructor(metadata: HTTPRequestMetadata);
 }
 /**

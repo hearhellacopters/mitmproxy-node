@@ -130,12 +130,15 @@ class WebSocketAdapter:
         do so without sending to the server.
         """
         if flow.request.path in self.intercept_paths:
+            ip_address = flow.client_conn.peername
             request = flow.request
             message_response = self.send_message({
                 'request': {
                     'method': request.method,
                     'url': request.url,
-                    'headers': list(request.headers.items(True))
+                    'headers': list(request.headers.items(True)),
+                    'address': ip_address[0],
+                    'port': ip_address[1]
                 },
                 'response': {
                     'status_code': 200,
@@ -174,11 +177,14 @@ class WebSocketAdapter:
         if request.path in self.intercept_paths:
             return
         response = flow.response
+        ip_address = flow.client_conn.peername
         message_response = self.send_message({
             'request': {
                 'method': request.method,
                 'url': request.url,
                 'headers': list(request.headers.items(True)),
+                'address': ip_address[0],
+                'port': ip_address[1]
             },
             'response': {
                 'status_code': response.status_code,

@@ -92,6 +92,10 @@ interface HTTPMessageMetadata {
 export interface HTTPRequestMetadata {
   // GET, DELETE, POST,  etc.
   method: string;
+  //IP Address of Client
+  address: string;
+  //Port of Client
+  port: number;
   // Target URL for the request.
   url: string;
   // The set of headers from the request, as key-value pairs.
@@ -221,9 +225,15 @@ export class InterceptedHTTPRequest extends AbstractHTTPHeaders {
   public rawUrl: string;
   // The URL as a URL object.
   public url: Url;
+  //IP Address of Client
+  public address: string;
+  //Port of Client
+  public port: number;
 
   constructor(metadata: HTTPRequestMetadata) {
     super(metadata.headers);
+    this.address = metadata.address;
+    this.port = metadata.port;
     this.method = metadata.method.toLowerCase();
     this.rawUrl = metadata.url;
     this.url = parseURL(this.rawUrl);
