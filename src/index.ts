@@ -416,7 +416,7 @@ export default class MITMProxy {
         if(allowHosts){
           for (let i = 0; i < allowHosts.length; i++) {
             const host = allowHosts[i];
-            scriptArgs.push(`--allow_hosts`, host);
+            scriptArgs.push(`--allow-hosts`, host);
           }
         }
         var path = (process.pkg) ? process.cwd() : __dirname;
