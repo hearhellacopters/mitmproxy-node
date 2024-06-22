@@ -136,8 +136,12 @@ export default class MITMProxy {
      * @param interceptPaths List of paths to completely intercept without sending to the server (e.g. ['/eval'])
      * @param quiet If true, do not print debugging messages (defaults to 'true').
      * @param onlyInterceptTextFiles If true, only intercept text files (JavaScript/HTML/CSS/etc, and ignore media files).
+     * @param ignoreHosts array of url as regex strings with ports to ignore.
+     * @param allowHosts opposite of ignore hosts
+     * @param exePath the path to the mitmdump.exe. default as "mitmdump" so must be in system path.
+     * @param port set the port to run on. Default 8080.
      */
-    static Create(cb?: Interceptor, interceptPaths?: string[], quiet?: boolean, onlyInterceptTextFiles?: boolean, ignoreHosts?: string | null): Promise<MITMProxy>;
+    static Create(cb?: Interceptor, interceptPaths?: string[], quiet?: boolean, onlyInterceptTextFiles?: boolean, ignoreHosts?: string[] | null, allowHosts?: string[] | null, exePath?: string, port?: number): Promise<MITMProxy>;
     private static _cleanupCalled;
     private static _cleanup();
     private _stashEnabled;
@@ -162,6 +166,6 @@ export default class MITMProxy {
     /**
      * Requests the given URL from the proxy.
      */
-    proxyGet(urlString: string): Promise<HTTPResponse>;
+    proxyGet(urlString: string, port?: number): Promise<HTTPResponse>;
     shutdown(): Promise<void>;
 }
