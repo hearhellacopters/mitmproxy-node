@@ -17,13 +17,9 @@ If you want to add additional functionality, such as filtering or whatnot, I'll 
 
 A Python plugin for `mitmproxy` starts a WebSocket server, and `mitmproxy-node` talks with it over WebSocket messages. The two communicate via binary messages to reduce marshaling-related overhead.
 
-## Your Python plugin is bad and you should feel bad
-
-I have no idea what I am doing. PRs to improve my Python code are appreciated!
-
 ## Pre-requisites
 
-* [`mitmproxy` V4](https://mitmproxy.org/) must be installed and runnable from the terminal. The install method cannot be a prebuilt binary or homebrew, since those packages are missing the Python websockets module. Install via `pip` or from source.
+* [`mitmproxy`](https://mitmproxy.org/) must be installed. The install method cannot be a prebuilt binary or homebrew, since those packages are missing the Python websockets module. Install via `pip` or from source.
 * Python 3.6, since I use the new async/await syntax in the mitmproxy plugin
 * `npm install` to pull in Node and PIP dependencies.
 
@@ -45,9 +41,14 @@ async function makeProxy() {
     if (req.rawUrl.contains("target.js") && res.getHeader('content-type').indexOf("javascript") !== -1) {
       interceptedMsg.setResponseBody(Buffer.from(`Hacked!`, 'utf8'));
     }
-  }, ['/eval'] /* list of paths to directly intercept -- don't send to server */,
-  true /* Be quiet; turn off for debug messages */,
-  true /* Only intercept text or potentially-text requests (all mime types with *application* and *text* in them, plus responses with no mime type) */
+  },
+  ['/eval'], /* list of paths to directly intercept -- don't send to server */,
+  true, /* Be quiet; turn off for debug messages */,
+  true, /* Only intercept text or potentially-text requests (all mime types with *application* and *text* in them, plus responses with no mime type) */
+  [], /*ignoreHosts list array of url as regex strings with ports*/
+  [], /*allowHosts opposite of ignore hosts (same format)*/
+  "mitmdump", /*path to the mitmdump.exe. default as "mitmdump" so must be in system path.*/
+  8080 /*port to run on. will default to 8080*/
   );
 }
 
@@ -71,7 +72,15 @@ function makeProxy() {
     if (req.rawUrl.contains("target.js") && res.getHeader('content-type').indexOf("javascript") !== -1) {
       interceptedMsg.setResponseBody(Buffer.from(`Hacked!`, 'utf8'));
     }
-  }, ['/eval'], true, true);
+  }, 
+  ['/eval'], 
+  true, 
+  true,
+  [],
+  [],
+  "mitmdump",
+  8080
+  );
 }
 
 function main() {

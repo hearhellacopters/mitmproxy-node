@@ -359,8 +359,21 @@ export default class MITMProxy {
    * @param interceptPaths List of paths to completely intercept without sending to the server (e.g. ['/eval'])
    * @param quiet If true, do not print debugging messages (defaults to 'true').
    * @param onlyInterceptTextFiles If true, only intercept text files (JavaScript/HTML/CSS/etc, and ignore media files).
+   * @param ignoreHosts array of url as regex strings with ports to ignore.
+   * @param allowHosts opposite of ignore hosts
+   * @param exePath the path to the mitmdump.exe. default as "mitmdump" so must be in system path.
+   * @param port set the port to run on. Default 8080.
    */
-  public static async Create(cb: Interceptor = nopInterceptor, interceptPaths: string[] = [], quiet: boolean = true, onlyInterceptTextFiles = false, ignoreHosts: string | null = null): Promise<MITMProxy> {
+  public static async Create(
+    cb: Interceptor = nopInterceptor, 
+    interceptPaths: string[] = [], 
+    quiet: boolean = true, 
+    onlyInterceptTextFiles = false, 
+    ignoreHosts: string[] | null = null,
+    allowHosts: string[] | null = null,
+    exePath = "mitmdump",
+    port: number = 8080
+  ): Promise<MITMProxy> {
     // Construct WebSocket server, and wait for it to begin listening.
     const wss = new WebSocketServer({ port: 8765 });
     const proxyConnected = new Promise<void>((resolve, reject) => {
@@ -381,7 +394,7 @@ export default class MITMProxy {
 
     try {
       try {
-        await waitForPort(8080, 1);
+        await waitForPort(port, 1);
         if (!quiet) {
           console.log(`MITMProxy already running.`);
         }
@@ -393,8 +406,18 @@ export default class MITMProxy {
         // --anticache means to disable caching, which gets in the way of transparently rewriting content.
         const scriptArgs = interceptPaths.length > 0 ? ["--set", `intercept=${interceptPaths.join(",")}`] : [];
         scriptArgs.push("--set", `onlyInterceptTextFiles=${onlyInterceptTextFiles}`);
+        scriptArgs.push("--listen-port", `${port}`);
         if (ignoreHosts) {
-          scriptArgs.push(`--ignore-hosts`, ignoreHosts);
+          for (let i = 0; i < ignoreHosts.length; i++) {
+            const host = ignoreHosts[i];
+            scriptArgs.push(`--ignore-hosts`, host);
+          }
+        }
+        if(allowHosts){
+          for (let i = 0; i < allowHosts.length; i++) {
+            const host = allowHosts[i];
+            scriptArgs.push(`--allow_hosts`, host);
+          }
         }
         var path = (process.pkg) ? process.cwd() : __dirname;
         const options = ["--anticache", "-s", resolve(path, `../scripts/proxy.py`)].concat(scriptArgs);
@@ -405,7 +428,7 @@ export default class MITMProxy {
         // allow self-signed SSL certificates
         options.push("--ssl-insecure");
         
-        const mitmProcess = spawn("mitmdump", options, {
+        const mitmProcess = spawn(exePath, options, {
           stdio: 'inherit'
         });
         const mitmProxyExited = new Promise<void>((_, reject) => {
@@ -418,7 +441,7 @@ export default class MITMProxy {
         }
         mp._initializeMITMProxy(mitmProcess);
         // Wait for port 8080 to come online.
-        const waitingForPort = waitForPort(8080);
+        const waitingForPort = waitForPort(port);
         try {
           // Fails if mitmproxy exits before port becomes available.
           await Promise.race([mitmProxyExited, waitingForPort]);
@@ -463,6 +486,7 @@ export default class MITMProxy {
     this._stashEnabled = v;
   }
   private _mitmProcess: ChildProcess = null;
+   // @ts-expect-error
   private _mitmError: Error = null;
   private _wss: WebSocketServer = null;
   public cb: Interceptor;
@@ -548,7 +572,7 @@ export default class MITMProxy {
   /**
    * Requests the given URL from the proxy.
    */
-  public async proxyGet(urlString: string): Promise<HTTPResponse> {
+  public async proxyGet(urlString: string, port: number = 8080): Promise<HTTPResponse> {
     const url = parseURL(urlString);
     const get = url.protocol === "http:" ? httpGet : httpsGet;
     return new Promise<HTTPResponse>((resolve, reject) => {
@@ -558,7 +582,7 @@ export default class MITMProxy {
           host: url.host
         },
         host: 'localhost',
-        port: 8080,
+        port: port,
         path: urlString
       }, (res) => {
         const data = new Array<Buffer>();
