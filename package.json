@@ -1,6 +1,6 @@
 {
   "name": "mitmproxy",
-  "version": "2.1.5",
+  "version": "2.1.4",
   "description": "NodeJS mitmproxy adapter.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,7 +27,7 @@
   "dependencies": {
     "@types/node": "^7.0.44",
     "@types/ws": "^3.2.0",
-    "ws": "^3.2.0"
+    "ws": "^5.2.4"
   },
   "devDependencies": {
     "typescript": "^2.5.3"
