@@ -30,7 +30,7 @@ def convert_body_to_bytes(body):
     if body is None:
         return bytes()
     else:
-        return body
+        return body if isinstance(body, bytes) else body.encode('utf-8')
 
 def is_text_response(headers):
     if 'content-type' in headers:
@@ -176,37 +176,52 @@ class WebSocketAdapter:
         # Ignore intercepted paths
         if request.path in self.intercept_paths:
             return
+        
         response = flow.response
         ip_address = flow.client_conn.peername
-        message_response = self.send_message({
-            'request': {
-                'method': request.method,
-                'url': request.url,
-                'headers': list(request.headers.items(True)),
-                'address': ip_address[0],
-                'port': ip_address[1]
-            },
-            'response': {
-                'status_code': response.status_code,
-                'headers': list(response.headers.items(True)),
-            }
-        }, convert_body_to_bytes(request.content), convert_body_to_bytes(response.content))
 
-        if message_response is None:
-            # No response received; making no modifications.
-            return
+        # Check Content-Encoding
+        content_encoding = response.headers.get("Content-Encoding", "").lower()
+        if content_encoding and content_encoding not in ['gzip', 'deflate', 'identity']:
+            ValueError(f"Invalid Content-Encoding: {content_encoding}")
+            # Optionally, you could modify the header or handle the content differently here
+            response.headers["Content-Encoding"] = "identity"
 
-        new_metadata = message_response[0]
-        new_body = message_response[1]
+        try:
+            request_content = convert_body_to_bytes(request.content)
+            response_content = convert_body_to_bytes(response.content)
+            
+            message_response = self.send_message({
+                'request': {
+                    'method': request.method,
+                    'url': request.url,
+                    'headers': list(request.headers.items(True)),
+                    'address': ip_address[0],
+                    'port': ip_address[1]
+                },
+                'response': {
+                    'status_code': response.status_code,
+                    'headers': list(response.headers.items(True)),
+                }
+            }, request_content, response_content)
 
+            if message_response is None:
+                # No response received; making no modifications.
+                return
 
-        #print("Prepping response!")
+            new_metadata = message_response[0]
+            new_body = message_response[1]
+            
+            #print("Prepping response!")
 
-        flow.response = http.Response.make(
-            new_metadata['status_code'],
-            new_body,
-            map(convert_headers_to_bytes, new_metadata['headers'])
-        )
+            flow.response = http.Response.make(
+                new_metadata['status_code'],
+                new_body,
+                map(convert_headers_to_bytes, new_metadata['headers'])
+            )
+        except ValueError as e:
+            ValueError(f"Error converting body to bytes: {e}")
+            # Handle the error as needed
         return
 
     def done(self):
